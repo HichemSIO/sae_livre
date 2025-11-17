@@ -1,0 +1,162 @@
+[
+  {
+    "titre": "Le Seigneur des Anneaux",
+    "auteur": "J.R.R. Tolkien",
+    "genre": "Fantasy",
+    "note_moyenne": 4.8,
+    "description": "Une épopée fantastique légendaire racontant la quête de Frodon Sacquet pour détruire l'Anneau Unique et sauver la Terre du Milieu de Sauron.",
+    "image_url": "https://via.placeholder.com/300x450/1A237E/FFFFFF?text=LOTR"
+  },
+  {
+    "titre": "1984",
+    "auteur": "George Orwell",
+    "genre": "Science-Fiction",
+    "note_moyenne": 4.6,
+    "description": "Un roman dystopique qui dépeint un futur totalitaire où Big Brother surveille chaque aspect de la vie des citoyens.",
+    "image_url": "https://via.placeholder.com/300x450/283593/FFFFFF?text=1984"
+  },
+  {
+    "titre": "Harry Potter à l'école des sorciers",
+    "auteur": "J.K. Rowling",
+    "genre": "Fantasy",
+    "note_moyenne": 4.7,
+    "description": "Le début des aventures magiques de Harry Potter qui découvre qu'il est un sorcier et entre à Poudlard.",
+    "image_url": "https://via.placeholder.com/300x450/3949AB/FFFFFF?text=HP"
+  },
+  {
+    "titre": "Le Petit Prince",
+    "auteur": "Antoine de Saint-Exupéry",
+    "genre": "Conte",
+    "note_moyenne": 4.5,
+    "description": "Un conte philosophique et poétique racontant les aventures d'un petit prince voyageant de planète en planète.",
+    "image_url": "https://via.placeholder.com/300x450/5E35B1/FFFFFF?text=PP"
+  },
+  {
+    "titre": "Dune",
+    "auteur": "Frank Herbert",
+    "genre": "Science-Fiction",
+    "note_moyenne": 4.4,
+    "description": "Une saga épique sur la planète désertique Arrakis, seule source de l'épice la plus précieuse de l'univers.",
+    "image_url": "https://via.placeholder.com/300x450/7E57C2/FFFFFF?text=Dune"
+  },
+  {
+    "titre": "Orgueil et Préjugés",
+    "auteur": "Jane Austen",
+    "genre": "Romance",
+    "note_moyenne": 4.3,
+    "description": "L'histoire d'Elizabeth Bennet et de Mr Darcy, classique de la littérature romantique anglaise.",
+    "image_url": "https://via.placeholder.com/300x450/9575CD/FFFFFF?text=P%26P"
+  },
+  {
+    "titre": "Le Hobbit",
+    "auteur": "J.R.R. Tolkien",
+    "genre": "Fantasy",
+    "note_moyenne": 4.7,
+    "description": "Les aventures de Bilbon Sacquet qui rejoint un groupe de nains pour récupérer leur trésor gardé par un dragon.",
+    "image_url": "https://via.placeholder.com/300x450/B39DDB/FFFFFF?text=Hobbit"
+  },
+  {
+    "titre": "Les Misérables",
+    "auteur": "Victor Hugo",
+    "genre": "Classique",
+    "note_moyenne": 4.5,
+    "description": "L'épopée de Jean Valjean et sa quête de rédemption dans la France du XIXe siècle.",
+    "image_url": "https://via.placeholder.com/300x450/D1C4E9/000000?text=Mis"
+  },
+  {
+    "titre": "L'Alchimiste",
+    "auteur": "Paulo Coelho",
+    "genre": "Philosophie",
+    "note_moyenne": 4.2,
+    "description": "Le voyage initiatique d'un jeune berger andalou à la recherche de son trésor et de sa légende personnelle.",
+    "image_url": "https://via.placeholder.com/300x450/1565C0/FFFFFF?text=Alchi"
+  },
+  {
+    "titre": "Le Comte de Monte-Cristo",
+    "auteur": "Alexandre Dumas",
+    "genre": "Aventure",
+    "note_moyenne": 4.6,
+    "description": "Histoire épique de vengeance d'Edmond Dantès, injustement emprisonné puis devenu riche et puissant.",
+    "image_url": "https://via.placeholder.com/300x450/1976D2/FFFFFF?text=Monte"
+  },
+  {
+    "titre": "Pride and Prejudice",
+    "auteur": "Jane Austen",
+    "genre": "Romance",
+    "note_moyenne": 4.4,
+    "description": "L'histoire intemporelle de l'amour entre Elizabeth Bennet et Mr Darcy malgré leurs préjugés initiaux.",
+    "image_url": "https://via.placeholder.com/300x450/1E88E5/FFFFFF?text=Pride"
+  },
+  {
+    "titre": "Fondation",
+    "auteur": "Isaac Asimov",
+    "genre": "Science-Fiction",
+    "note_moyenne": 4.3,
+    "description": "L'histoire de Hari Seldon et de sa fondation destinée à préserver la connaissance durant la chute de l'Empire Galactique.",
+    "image_url": "https://via.placeholder.com/300x450/2196F3/FFFFFF?text=Found"
+  },
+  {
+    "titre": "Le Nom de la Rose",
+    "auteur": "Umberto Eco",
+    "genre": "Mystère",
+    "note_moyenne": 4.1,
+    "description": "Un moine enquête sur des meurtres mystérieux dans une abbaye médiévale, mêlant polar et réflexions philosophiques.",
+    "image_url": "https://via.placeholder.com/300x450/42A5F5/FFFFFF?text=Rose"
+  },
+  {
+    "titre": "Le Meilleur des Mondes",
+    "auteur": "Aldous Huxley",
+    "genre": "Science-Fiction",
+    "note_moyenne": 4.2,
+    "description": "Dystopie futuriste où l'humanité est conditionnée dès la naissance pour accepter sa place dans la société.",
+    "image_url": "https://via.placeholder.com/300x450/64B5F6/000000?text=Brave"
+  },
+  {
+    "titre": "Les Hauts de Hurlevent",
+    "auteur": "Emily Brontë",
+    "genre": "Romance",
+    "note_moyenne": 4.0,
+    "description": "Histoire passionnée et sombre de l'amour destructeur entre Catherine et Heathcliff.",
+    "image_url": "https://via.placeholder.com/300x450/90CAF9/000000?text=Wuther"
+  },
+  {
+    "titre": "Fahrenheit 451",
+    "auteur": "Ray Bradbury",
+    "genre": "Science-Fiction",
+    "note_moyenne": 4.3,
+    "description": "Dans un futur où les livres sont interdits et brûlés, un pompier commence à remettre en question son rôle.",
+    "image_url": "https://via.placeholder.com/300x450/0D47A1/FFFFFF?text=F451"
+  },
+  {
+    "titre": "L'Étranger",
+    "auteur": "Albert Camus",
+    "genre": "Philosophie",
+    "note_moyenne": 3.9,
+    "description": "Récit existentialiste de Meursault, homme indifférent confronté à l'absurdité de l'existence.",
+    "image_url": "https://via.placeholder.com/300x450/1565C0/FFFFFF?text=Etrang"
+  },
+  {
+    "titre": "Le Parfum",
+    "auteur": "Patrick Süskind",
+    "genre": "Thriller",
+    "note_moyenne": 4.1,
+    "description": "L'histoire obsédante de Jean-Baptiste Grenouille, génie olfactif devenu meurtrier.",
+    "image_url": "https://via.placeholder.com/300x450/1976D2/FFFFFF?text=Parfum"
+  },
+  {
+    "titre": "La Peste",
+    "auteur": "Albert Camus",
+    "genre": "Philosophie",
+    "note_moyenne": 4.2,
+    "description": "Chronique d'une épidémie de peste à Oran, métaphore de la condition humaine face à l'absurde.",
+    "image_url": "https://via.placeholder.com/300x450/1E88E5/FFFFFF?text=Peste"
+  },
+  {
+    "titre": "Cent ans de solitude",
+    "auteur": "Gabriel García Márquez",
+    "genre": "Réalisme magique",
+    "note_moyenne": 4.4,
+    "description": "Saga familiale épique des Buendía dans le village imaginaire de Macondo, chef-d'œuvre du réalisme magique.",
+    "image_url": "https://via.placeholder.com/300x450/2196F3/FFFFFF?text=Solitude"
+  }
+]
