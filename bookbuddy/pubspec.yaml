@@ -13,7 +13,7 @@ dependencies:
   # État et navigation
   provider: ^6.1.1
   
-  # Base de données
+  # Base de données (SQLite)
   sqflite: ^2.3.0
   path_provider: ^2.1.1
   path: ^1.8.3
@@ -22,7 +22,7 @@ dependencies:
   google_fonts: ^6.1.0
   flutter_rating_bar: ^4.0.1
   
-  # Performance
+  # Performance / Infos système
   battery_plus: ^5.0.2
   device_info_plus: ^9.1.1
   

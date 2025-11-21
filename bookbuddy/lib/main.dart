@@ -7,14 +7,15 @@ import 'screens/home_page.dart';
 import 'screens/favorites_page.dart';
 import 'screens/stats_page.dart';
 import 'screens/settings_page.dart';
-import 'services/database_helper.dart';
-import 'package:bookbuddy/services/database_helper.dart';
+import 'services/database_helper.dart'; // Importation relative (CORRIGÉE)
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Initialiser la base de données
-  await DatabaseHelper.instance.database;
+  // Initialiser la base de données (cette ligne est maintenant correcte)
+  // ATTENTION: La méthode .database est une convention pour SQFlite.
+  // Elle devrait fonctionner avec la nouvelle implémentation de DatabaseHelper.
+  await DatabaseHelper.instance.database; 
   
   runApp(
     MultiProvider(

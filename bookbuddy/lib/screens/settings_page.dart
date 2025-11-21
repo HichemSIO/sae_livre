@@ -40,6 +40,8 @@ class _SettingsPageState extends State<SettingsPage> {
       info = 'Non disponible';
     }
 
+    if (!mounted) return;
+    
     setState(() {
       _deviceInfo = info;
     });
@@ -49,145 +51,165 @@ class _SettingsPageState extends State<SettingsPage> {
     final battery = Battery();
     try {
       final level = await battery.batteryLevel;
+      
+      if (!mounted) return;
+      
       setState(() {
         _batteryLevel = level;
       });
     } catch (e) {
+      if (!mounted) return;
+      
       setState(() {
         _batteryLevel = -1;
       });
     }
   }
 
+  Future<void> _handleAlgorithmChange(BookProvider bookProvider, bool value) async {
+    await bookProvider.loadRecommendations(useSmartAlgorithm: value);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              value
+                  ? 'Algorithme intelligent activé'
+                  : 'Algorithme basique activé',
+            ),
+          ),
+        );
+      }
+    });
+  }
+
+  Future<void> _handleReloadBooks(BookProvider bookProvider) async {
+    await bookProvider.loadBooks();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Livres rechargés')),
+        );
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
-    final bookProvider = Provider.of<BookProvider>(context);
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('⚙️ Paramètres'),
         backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Colors.white,
       ),
-      body: ListView(
-        children: [
-          const SizedBox(height: 16),
-          
-          // Section Apparence
-          _buildSectionHeader(context, 'Apparence'),
-          ListTile(
-            leading: Icon(
-              themeProvider.isDarkMode ? Icons.dark_mode : Icons.light_mode,
-            ),
-            title: const Text('Thème'),
-            subtitle: Text(themeProvider.themeModeString),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              _showThemeDialog(context, themeProvider);
-            },
-          ),
-          const Divider(),
-
-          // Section Algorithme
-          _buildSectionHeader(context, 'Algorithme de recommandation'),
-          SwitchListTile(
-            secondary: const Icon(Icons.auto_awesome),
-            title: const Text('Algorithme intelligent'),
-            subtitle: const Text('Utilise l\'algorithme adaptatif avancé'),
-            value: true,
-            onChanged: (value) async {
-              await bookProvider.loadRecommendations(useSmartAlgorithm: value);
-              if (!mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    value
-                        ? 'Algorithme intelligent activé'
-                        : 'Algorithme basique activé',
-                  ),
+      body: Consumer2<ThemeProvider, BookProvider>(
+        builder: (context, themeProvider, bookProvider, _) {
+          return ListView(
+            children: [
+              const SizedBox(height: 16),
+              
+              // Section Apparence
+              _buildSectionHeader(context, 'Apparence'),
+              ListTile(
+                leading: Icon(
+                  themeProvider.isDarkMode ? Icons.dark_mode : Icons.light_mode,
                 ),
-              );
-            },
-          ),
-          const Divider(),
+                title: const Text('Thème'),
+                subtitle: Text(themeProvider.themeModeString),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  _showThemeDialog(context, themeProvider);
+                },
+              ),
+              const Divider(),
 
-          // Section Données
-          _buildSectionHeader(context, 'Données'),
-          ListTile(
-            leading: const Icon(Icons.refresh),
-            title: const Text('Recharger les livres'),
-            subtitle: const Text('Actualiser la bibliothèque'),
-            onTap: () async {
-              await bookProvider.loadBooks();
-              if (!mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Livres rechargés')),
-              );
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.delete_outline, color: Colors.red),
-            title: const Text('Réinitialiser les données'),
-            subtitle: const Text('Effacer l\'historique et les préférences'),
-            onTap: () {
-              _showResetDialog(context, bookProvider);
-            },
-          ),
-          const Divider(),
+              // Section Algorithme
+              _buildSectionHeader(context, 'Algorithme de recommandation'),
+              SwitchListTile(
+                secondary: const Icon(Icons.auto_awesome),
+                title: const Text('Algorithme intelligent'),
+                subtitle: const Text('Utilise l\'algorithme adaptatif avancé'),
+                value: true, 
+                onChanged: (value) async {
+                  await _handleAlgorithmChange(bookProvider, value);
+                },
+              ),
+              const Divider(),
 
-          // Section Info système
-          _buildSectionHeader(context, 'Informations système'),
-          ListTile(
-            leading: const Icon(Icons.phone_android),
-            title: const Text('Appareil'),
-            subtitle: Text(_deviceInfo),
-          ),
-          ListTile(
-            leading: Icon(
-              Icons.battery_full,
-              color: _batteryLevel > 20 ? Colors.green : Colors.red,
-            ),
-            title: const Text('Batterie'),
-            subtitle: Text(
-              _batteryLevel >= 0 ? '$_batteryLevel%' : 'Non disponible',
-            ),
-            trailing: IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: _loadBatteryLevel,
-            ),
-          ),
-          const Divider(),
+              // Section Données
+              _buildSectionHeader(context, 'Données'),
+              ListTile(
+                leading: const Icon(Icons.refresh),
+                title: const Text('Recharger les livres'),
+                subtitle: const Text('Actualiser la bibliothèque'),
+                onTap: () async {
+                  await _handleReloadBooks(bookProvider);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.delete_outline, color: Colors.red),
+                title: const Text('Réinitialiser les données'),
+                subtitle: const Text('Effacer l\'historique et les préférences'),
+                onTap: () {
+                  _showResetDialog(context, bookProvider);
+                },
+              ),
+              const Divider(),
 
-          // Section À propos
-          _buildSectionHeader(context, 'À propos'),
-          const ListTile(
-            leading: Icon(Icons.info_outline),
-            title: Text('Version'),
-            subtitle: Text('1.0.0'),
-          ),
-          ListTile(
-            leading: const Icon(Icons.description),
-            title: const Text('À propos de BookBuddy'),
-            subtitle: const Text('Application de recommandation de livres intelligente'),
-            onTap: () {
-              showAboutDialog(
-                context: context,
-                applicationName: 'BookBuddy',
-                applicationVersion: '1.0.0',
-                applicationIcon: const Icon(Icons.book, size: 48),
-                children: [
-                  const Text(
-                    'BookBuddy est une application de recommandation de livres '
-                    'qui apprend de vos préférences pour vous suggérer '
-                    'des lectures adaptées à vos goûts.',
-                  ),
-                ],
-              );
-            },
-          ),
-          const SizedBox(height: 32),
-        ],
+              // Section Info système
+              _buildSectionHeader(context, 'Informations système'),
+              ListTile(
+                leading: const Icon(Icons.phone_android),
+                title: const Text('Appareil'),
+                subtitle: Text(_deviceInfo),
+              ),
+              ListTile(
+                leading: Icon(
+                  Icons.battery_full,
+                  color: _batteryLevel > 20 ? Colors.green : Colors.red,
+                ),
+                title: const Text('Batterie'),
+                subtitle: Text(
+                  _batteryLevel >= 0 ? '$_batteryLevel%' : 'Non disponible',
+                ),
+                trailing: IconButton(
+                  icon: const Icon(Icons.refresh),
+                  onPressed: _loadBatteryLevel,
+                ),
+              ),
+              const Divider(),
+
+              // Section À propos
+              _buildSectionHeader(context, 'À propos'),
+              const ListTile(
+                leading: Icon(Icons.info_outline),
+                title: Text('Version'),
+                subtitle: Text('1.0.0'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.description),
+                title: const Text('À propos de BookBuddy'),
+                subtitle: const Text('Application de recommandation de livres intelligente'),
+                onTap: () {
+                  showAboutDialog(
+                    context: context,
+                    applicationName: 'BookBuddy',
+                    applicationVersion: '1.0.0',
+                    applicationIcon: const Icon(Icons.book, size: 48),
+                    children: [
+                      const Text(
+                        'BookBuddy est une application de recommandation de livres '
+                        'qui apprend de vos préférences pour vous suggérer '
+                        'des lectures adaptées à vos goûts.',
+                      ),
+                    ],
+                  );
+                },
+              ),
+              const SizedBox(height: 32),
+            ],
+          );
+        },
       ),
     );
   }
@@ -207,39 +229,63 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   void _showThemeDialog(BuildContext context, ThemeProvider themeProvider) {
+    ThemeMode? selectedTheme = themeProvider.themeMode;
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Choisir le thème'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            RadioListTile<ThemeMode>(
-              title: const Text('Clair'),
-              value: ThemeMode.light,
-              groupValue: themeProvider.themeMode,
-              onChanged: (value) {
-                themeProvider.setThemeMode(value!);
-                Navigator.pop(context);
-              },
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Choisir le thème'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // ignore: deprecated_member_use
+              RadioListTile<ThemeMode>(
+                title: const Text('Clair'),
+                value: ThemeMode.light,
+                groupValue: selectedTheme,
+                onChanged: (ThemeMode? value) {
+                  setState(() {
+                    selectedTheme = value;
+                  });
+                },
+              ),
+              // ignore: deprecated_member_use
+              RadioListTile<ThemeMode>(
+                title: const Text('Sombre'),
+                value: ThemeMode.dark,
+                groupValue: selectedTheme,
+                onChanged: (ThemeMode? value) {
+                  setState(() {
+                    selectedTheme = value;
+                  });
+                },
+              ),
+              // ignore: deprecated_member_use
+              RadioListTile<ThemeMode>(
+                title: const Text('Système'),
+                value: ThemeMode.system,
+                groupValue: selectedTheme,
+                onChanged: (ThemeMode? value) {
+                  setState(() {
+                    selectedTheme = value;
+                  });
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Annuler'),
             ),
-            RadioListTile<ThemeMode>(
-              title: const Text('Sombre'),
-              value: ThemeMode.dark,
-              groupValue: themeProvider.themeMode,
-              onChanged: (value) {
-                themeProvider.setThemeMode(value!);
-                Navigator.pop(context);
+            TextButton(
+              onPressed: () {
+                if (selectedTheme != null) {
+                  themeProvider.setThemeMode(selectedTheme!);
+                }
+                Navigator.pop(dialogContext);
               },
-            ),
-            RadioListTile<ThemeMode>(
-              title: const Text('Système'),
-              value: ThemeMode.system,
-              groupValue: themeProvider.themeMode,
-              onChanged: (value) {
-                themeProvider.setThemeMode(value!);
-                Navigator.pop(context);
-              },
+              child: const Text('OK'),
             ),
           ],
         ),
@@ -250,7 +296,7 @@ class _SettingsPageState extends State<SettingsPage> {
   void _showResetDialog(BuildContext context, BookProvider bookProvider) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Réinitialiser les données'),
         content: const Text(
           'Cette action effacera votre historique de lectures, vos notes et vos favoris. '
@@ -258,17 +304,20 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Annuler'),
           ),
           TextButton(
             onPressed: () async {
-              Navigator.pop(context);
+              Navigator.pop(dialogContext);
               await bookProvider.resetData();
-              if (!context.mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Données réinitialisées')),
-              );
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Données réinitialisées')),
+                  );
+                }
+              });
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Réinitialiser'),

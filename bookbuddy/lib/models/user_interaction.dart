@@ -1,3 +1,4 @@
+// Modèle d'Interaction Utilisateur (stocké dans la DB)
 class UserInteraction {
   final int? id;
   final int bookId;
@@ -34,6 +35,7 @@ class UserInteraction {
   }
 }
 
+// Modèle de Métrique de Performance (stocké dans la DB)
 class PerformanceMetric {
   final int? id;
   final String operationType; // 'list_load', 'recommendation', 'detail_view'
@@ -67,8 +69,8 @@ class PerformanceMetric {
       id: map['id'] as int?,
       operationType: map['operation_type'] as String,
       durationMs: map['duration_ms'] as int,
-      cpuUsage: map['cpu_usage'] as double?,
-      memoryUsage: map['memory_usage'] as double?,
+      cpuUsage: (map['cpu_usage'] as num?)?.toDouble(),
+      memoryUsage: (map['memory_usage'] as num?)?.toDouble(),
       timestamp: DateTime.parse(map['timestamp'] as String),
     );
   }

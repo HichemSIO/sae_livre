@@ -32,6 +32,7 @@ class BookProvider extends ChangeNotifier {
       _allBooks = await _db.getAllBooks();
       
       final duration = DateTime.now().difference(startTime).inMilliseconds;
+      // PerformanceMetric est maintenant importé via user_interaction.dart
       await _db.insertMetric(PerformanceMetric(
         operationType: 'list_load',
         durationMs: duration,
@@ -51,6 +52,8 @@ class BookProvider extends ChangeNotifier {
   Future<void> loadRecommendations({bool useSmartAlgorithm = true}) async {
     try {
       if (useSmartAlgorithm) {
+        // La méthode getSmartRecommendations() renvoie List<Book> ou List<ScoredBook>
+        // Le moteur retourne des Books, donc c'est correct.
         _recommendedBooks = await _recommendationEngine.getSmartRecommendations(limit: 20);
       } else {
         _recommendedBooks = await _recommendationEngine.getBasicRecommendations(limit: 20);
@@ -75,14 +78,18 @@ class BookProvider extends ChangeNotifier {
 
   // Ajouter/retirer des favoris
   Future<void> toggleFavorite(Book book) async {
+    // On s'assure que l'ID n'est pas nul avant de continuer (ID requis pour la DB)
+    if (book.id == null) return;
+    final bookId = book.id!;
+    
     try {
-      final isFav = await _db.isFavorite(book.id!);
+      final isFav = await _db.isFavorite(bookId);
       
       if (isFav) {
-        await _db.removeFavorite(book.id!);
+        await _db.removeFavorite(bookId);
       } else {
         await _db.insertInteraction(UserInteraction(
-          bookId: book.id!,
+          bookId: bookId,
           actionType: 'favorite',
         ));
       }
@@ -102,9 +109,11 @@ class BookProvider extends ChangeNotifier {
 
   // Liker un livre
   Future<void> likeBook(Book book) async {
+    if (book.id == null) return;
+    final bookId = book.id!;
     try {
       await _db.insertInteraction(UserInteraction(
-        bookId: book.id!,
+        bookId: bookId,
         actionType: 'like',
       ));
       await loadRecommendations();
@@ -116,9 +125,11 @@ class BookProvider extends ChangeNotifier {
 
   // Disliker un livre
   Future<void> dislikeBook(Book book) async {
+    if (book.id == null) return;
+    final bookId = book.id!;
     try {
       await _db.insertInteraction(UserInteraction(
-        bookId: book.id!,
+        bookId: bookId,
         actionType: 'dislike',
       ));
       await loadRecommendations();
@@ -130,9 +141,11 @@ class BookProvider extends ChangeNotifier {
 
   // Noter un livre
   Future<void> rateBook(Book book, int rating) async {
+    if (book.id == null) return;
+    final bookId = book.id!;
     try {
       await _db.insertInteraction(UserInteraction(
-        bookId: book.id!,
+        bookId: bookId,
         actionType: 'rating',
         rating: rating,
       ));
@@ -145,9 +158,11 @@ class BookProvider extends ChangeNotifier {
 
   // Enregistrer une vue
   Future<void> viewBook(Book book) async {
+    if (book.id == null) return;
+    final bookId = book.id!;
     try {
       await _db.insertInteraction(UserInteraction(
-        bookId: book.id!,
+        bookId: bookId,
         actionType: 'view',
       ));
     } catch (e) {

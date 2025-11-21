@@ -51,7 +51,8 @@ class BookCard extends StatelessWidget {
                       child: Container(
                         padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
-                          color: Colors.red.withOpacity(0.9),
+                          // CORRECTION: .withOpacity(0.9) -> .withAlpha(230)
+                          color: Colors.red.withAlpha(230), 
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
@@ -74,7 +75,8 @@ class BookCard extends StatelessWidget {
                           end: Alignment.bottomCenter,
                           colors: [
                             Colors.transparent,
-                            Colors.black.withOpacity(0.7),
+                            // CORRECTION: .withOpacity(0.7) -> .withAlpha(179)
+                            Colors.black.withAlpha(179),
                           ],
                         ),
                       ),

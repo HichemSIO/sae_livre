@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../services/database_helper.dart';
 import '../models/user_interaction.dart';
-import '../models/book.dart';
 
 class StatsPage extends StatefulWidget {
   const StatsPage({super.key});
@@ -56,6 +55,9 @@ class _StatsPageState extends State<StatsPage> {
         }
       }
 
+      // CORRECTION : Vérifier "mounted" AVANT d'appeler setState
+      if (!mounted) return;
+      
       setState(() {
         _genreStats = genreCount;
         _authorStats = authorCount;
@@ -63,14 +65,16 @@ class _StatsPageState extends State<StatsPage> {
         _isLoading = false;
       });
     } catch (e) {
+      // CORRECTION : Vérifier "mounted" AVANT d'appeler setState
+      if (!mounted) return;
+      
       setState(() {
         _isLoading = false;
       });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur de chargement: $e')),
-        );
-      }
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur de chargement: $e')),
+      );
     }
   }
 

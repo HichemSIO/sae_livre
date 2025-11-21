@@ -1,275 +1,179 @@
+import 'dart:async';
+import 'dart:convert';
+import 'package:sqflite/sqflite.dart';
+import 'package:path/path.dart';
+import 'package:flutter/services.dart';
 import '../models/book.dart';
-import '../models/user_interaction.dart';
-import 'database_helper.dart';
+import '../models/user_interaction.dart'; // Importe UserInteraction et PerformanceMetric
 
+class DatabaseHelper {
+  static final DatabaseHelper instance = DatabaseHelper._init();
+  static Database? _database;
 
-class UserPreferences {
-  final Map<String, int> genreCount;
-  final Map<String, int> authorCount;
-  final List<String> likedGenres;
-  final List<String> likedAuthors;
-  final double averageRating;
+  DatabaseHelper._init();
 
-  UserPreferences({
-    required this.genreCount,
-    required this.authorCount,
-    required this.likedGenres,
-    required this.likedAuthors,
-    required this.averageRating,
-  });
-}
+  static const String tableBooks = 'books';
+  static const String tableInteractions = 'interactions';
+  static const String tableMetrics = 'metrics';
 
-class ScoredBook {
-  final Book book;
-  final double score;
-  final Map<String, double> scoreBreakdown;
-
-  ScoredBook({
-    required this.book,
-    required this.score,
-    required this.scoreBreakdown,
-  });
-}
-
-class RecommendationEngine {
-  final DatabaseHelper _db = DatabaseHelper.instance;
-
-  // Version 1: Algorithme simple Content-Based
-  Future<List<Book>> getBasicRecommendations({int limit = 10}) async {
-    final startTime = DateTime.now();
-    
-    final preferences = await _analyzeUserPreferences();
-    final allBooks = await _db.getAllBooks();
-    final interactions = await _db.getAllInteractions();
-    
-    // Livres déjà interagis
-    final interactedBookIds = interactions.map((i) => i.bookId).toSet();
-    
-    // Filtrer les livres non lus
-    final unreadBooks = allBooks.where((book) => 
-      !interactedBookIds.contains(book.id)
-    ).toList();
-    
-    // Scorer les livres
-    final scored = unreadBooks.map((book) {
-      final score = _calculateBasicScore(book, preferences);
-      return ScoredBook(
-        book: book,
-        score: score,
-        scoreBreakdown: {'basic': score},
-      );
-    }).toList();
-    
-    // Trier par score
-    scored.sort((a, b) => b.score.compareTo(a.score));
-    
-    // Enregistrer métrique de performance
-    final duration = DateTime.now().difference(startTime).inMilliseconds;
-    await _db.insertMetric(PerformanceMetric(
-      operationType: 'basic_recommendation',
-      durationMs: duration,
-    ));
-    
-    return scored.take(limit).map((s) => s.book).toList();
+  Future<Database> get database async {
+    if (_database != null) return _database!;
+    _database = await _initDB('bookbuddy.db');
+    return _database!;
   }
 
-  // Version 2: Algorithme adaptatif avancé
-  Future<List<Book>> getSmartRecommendations({int limit = 10}) async {
-    final startTime = DateTime.now();
-    
-    final preferences = await _analyzeUserPreferences();
-    final allBooks = await _db.getAllBooks();
-    final interactions = await _db.getAllInteractions();
-    
-    final interactedBookIds = interactions.map((i) => i.bookId).toSet();
-    final unreadBooks = allBooks.where((book) => 
-      !interactedBookIds.contains(book.id)
-    ).toList();
-    
-    if (unreadBooks.isEmpty) {
-      return [];
-    }
-    
-    // Scorer avec algorithme avancé
-    final scored = unreadBooks.map((book) {
-      final genreScore = _calculateGenreAffinity(book, preferences) * 0.35;
-      final authorScore = _calculateAuthorAffinity(book, preferences) * 0.25;
-      final noveltyScore = _calculateNoveltyBonus(book, preferences) * 0.20;
-      final popularityScore = (book.noteMoyenne / 5.0) * 0.20;
-      
-      final totalScore = genreScore + authorScore + noveltyScore + popularityScore;
-      
-      return ScoredBook(
-        book: book,
-        score: totalScore,
-        scoreBreakdown: {
-          'genre': genreScore,
-          'author': authorScore,
-          'novelty': noveltyScore,
-          'popularity': popularityScore,
-        },
-      );
-    }).toList();
-    
-    // Trier et diversifier
-    scored.sort((a, b) => b.score.compareTo(a.score));
-    final diversified = _diversifyResults(scored, limit);
-    
-    final duration = DateTime.now().difference(startTime).inMilliseconds;
-    await _db.insertMetric(PerformanceMetric(
-      operationType: 'smart_recommendation',
-      durationMs: duration,
-    ));
-    
-    return diversified;
+  Future<Database> _initDB(String filePath) async {
+    final dbPath = await getDatabasesPath();
+    final path = join(dbPath, filePath);
+
+    return await openDatabase(path, version: 1, onCreate: _createDB);
   }
 
-  // Analyser les préférences utilisateur
-  Future<UserPreferences> _analyzeUserPreferences() async {
-    final interactions = await _db.getAllInteractions();
+  Future _createDB(Database db, int version) async {
+    const idType = 'INTEGER PRIMARY KEY AUTOINCREMENT';
+    const textType = 'TEXT NOT NULL';
+    const intType = 'INTEGER NOT NULL';
+    const realType = 'REAL NOT NULL';
+    const realNull = 'REAL';
+
+    // 1. Table des Livres (Catalogue)
+    await db.execute('''
+CREATE TABLE $tableBooks ( 
+  id $idType, 
+  titre $textType,
+  auteur $textType,
+  genre $textType,
+  note_moyenne $realType,
+  description $textType,
+  image_url $textType
+)
+''');
+
+    // 2. Table des Interactions (Historique utilisateur)
+    await db.execute('''
+CREATE TABLE $tableInteractions ( 
+  id $idType, 
+  book_id $intType,
+  action_type $textType,
+  rating INTEGER, 
+  timestamp $textType
+)
+''');
+
+    // 3. Table des Métriques (Performance)
+    await db.execute('''
+CREATE TABLE $tableMetrics ( 
+  id $idType, 
+  operation_type $textType,
+  duration_ms $intType,
+  cpu_usage $realNull,
+  memory_usage $realNull,
+  timestamp $textType
+)
+''');
     
-    if (interactions.isEmpty) {
-      return UserPreferences(
-        genreCount: {},
-        authorCount: {},
-        likedGenres: [],
-        likedAuthors: [],
-        averageRating: 0.0,
-      );
+    await _loadInitialBooks(db);
+  }
+
+  /// Charge le catalogue de livres depuis le JSON et les insère
+  Future<void> _loadInitialBooks(Database db) async {
+    final String jsonString = await rootBundle.loadString('assets/data/books.json');
+    final List<dynamic> jsonList = json.decode(jsonString);
+
+    final batch = db.batch();
+    for (int i = 0; i < jsonList.length; i++) {
+        final book = Book.fromJson(jsonList[i]).copyWith(id: i + 1); 
+        batch.insert(tableBooks, book.toMap());
     }
+    await batch.commit(noResult: true);
+  }
+
+
+  // --- CRUD BASIQUE ---
+
+  Future<List<Book>> getAllBooks() async {
+    final db = await instance.database;
+    final result = await db.query(tableBooks);
+    return result.map((json) => Book.fromMap(json)).toList();
+  }
+
+  Future<Book?> getBookById(int id) async {
+    final db = await instance.database;
+    final result = await db.query(tableBooks, where: 'id = ?', whereArgs: [id]);
+    return result.isNotEmpty ? Book.fromMap(result.first) : null;
+  }
+
+  Future<List<UserInteraction>> getAllInteractions() async {
+    final db = await instance.database;
+    final result = await db.query(tableInteractions);
+    return result.map((json) => UserInteraction.fromMap(json)).toList();
+  }
+
+  Future<void> insertInteraction(UserInteraction interaction) async {
+    final db = await instance.database;
+    await db.insert(tableInteractions, interaction.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+  
+  Future<void> insertMetric(PerformanceMetric metric) async {
+    final db = await instance.database;
+    await db.insert(tableMetrics, metric.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+  
+  Future<List<PerformanceMetric>> getMetrics() async {
+      final db = await instance.database;
+      final result = await db.query(tableMetrics);
+      return result.map((json) => PerformanceMetric.fromMap(json)).toList(); 
+  }
+
+  // --- LOGIQUE MÉTIER SPÉCIFIQUE ---
+
+  Future<List<Book>> getFavoriteBooks() async {
+    final db = await instance.database;
+    // Sélectionner les IDs de livre marqués comme 'favorite'
+    final favInteractions = await db.query(
+      tableInteractions,
+      columns: ['book_id'],
+      where: 'action_type = ?',
+      whereArgs: ['favorite'],
+    );
     
-    final Map<String, int> genreCount = {};
-    final Map<String, int> authorCount = {};
-    final List<int> ratings = [];
+    // Récupérer les IDs uniques
+    final uniqueBookIds = favInteractions.map((i) => i['book_id'] as int).toSet().toList();
     
-    for (var interaction in interactions) {
-      final book = await _db.getBookById(interaction.bookId);
-      if (book == null) continue;
-      
-      // Compter les genres et auteurs pour les interactions positives
-      if (interaction.actionType == 'like' || 
-          interaction.actionType == 'favorite' ||
-          (interaction.rating != null && interaction.rating! >= 4)) {
-        genreCount[book.genre] = (genreCount[book.genre] ?? 0) + 1;
-        authorCount[book.auteur] = (authorCount[book.auteur] ?? 0) + 1;
-      }
-      
-      if (interaction.rating != null) {
-        ratings.add(interaction.rating!);
-      }
-    }
-    
-    // Top genres et auteurs
-    final sortedGenres = genreCount.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-    final sortedAuthors = authorCount.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-    
-    final avgRating = ratings.isEmpty 
-        ? 0.0 
-        : ratings.reduce((a, b) => a + b) / ratings.length;
-    
-    return UserPreferences(
-      genreCount: genreCount,
-      authorCount: authorCount,
-      likedGenres: sortedGenres.take(3).map((e) => e.key).toList(),
-      likedAuthors: sortedAuthors.take(3).map((e) => e.key).toList(),
-      averageRating: avgRating,
+    if (uniqueBookIds.isEmpty) return [];
+
+    // Récupérer les détails des livres
+    final books = await db.query(
+      tableBooks,
+      where: 'id IN (${List.filled(uniqueBookIds.length, '?').join(', ')})',
+      whereArgs: uniqueBookIds,
+    );
+    return books.map((json) => Book.fromMap(json)).toList();
+  }
+  
+  Future<bool> isFavorite(int bookId) async {
+    final db = await instance.database;
+    final count = await db.rawQuery(
+      'SELECT COUNT(*) FROM $tableInteractions WHERE book_id = ? AND action_type = ?',
+      [bookId, 'favorite']
+    );
+    // Vérifie si le count est supérieur à 0
+    return Sqflite.firstIntValue(count) != null && Sqflite.firstIntValue(count)! > 0;
+  }
+
+  Future<void> removeFavorite(int bookId) async {
+    final db = await instance.database;
+    // Supprime toutes les interactions de type 'favorite' pour ce livre
+    await db.delete(
+      tableInteractions,
+      where: 'book_id = ? AND action_type = ?',
+      whereArgs: [bookId, 'favorite'],
     );
   }
 
-  // Score basique (V1)
-  double _calculateBasicScore(Book book, UserPreferences prefs) {
-    double score = 0.0;
-    
-    // Genre match (40%)
-    if (prefs.likedGenres.contains(book.genre)) {
-      score += 0.4;
-    }
-    
-    // Auteur match (30%)
-    if (prefs.likedAuthors.contains(book.auteur)) {
-      score += 0.3;
-    }
-    
-    // Note du livre (30%)
-    score += (book.noteMoyenne / 5.0) * 0.3;
-    
-    return score;
-  }
-
-  // Affinité de genre (V2)
-  double _calculateGenreAffinity(Book book, UserPreferences prefs) {
-    if (prefs.genreCount.isEmpty) {
-      return book.noteMoyenne / 5.0;
-    }
-    
-    final genreScore = prefs.genreCount[book.genre] ?? 0;
-    final maxGenreScore = prefs.genreCount.values.reduce((a, b) => a > b ? a : b);
-    
-    return maxGenreScore > 0 ? genreScore / maxGenreScore : 0.0;
-  }
-
-  // Affinité d'auteur (V2)
-  double _calculateAuthorAffinity(Book book, UserPreferences prefs) {
-    if (prefs.authorCount.isEmpty) {
-      return 0.0;
-    }
-    
-    final authorScore = prefs.authorCount[book.auteur] ?? 0;
-    final maxAuthorScore = prefs.authorCount.values.reduce((a, b) => a > b ? a : b);
-    
-    return maxAuthorScore > 0 ? authorScore / maxAuthorScore : 0.0;
-  }
-
-  // Bonus de nouveauté (évite la bulle de filtre)
-  double _calculateNoveltyBonus(Book book, UserPreferences prefs) {
-    // Bonus pour explorer de nouveaux genres
-    if (!prefs.likedGenres.contains(book.genre)) {
-      return 0.3;
-    }
-    
-    // Bonus pour nouveaux auteurs du même genre aimé
-    if (prefs.likedGenres.contains(book.genre) && 
-        !prefs.likedAuthors.contains(book.auteur)) {
-      return 0.5;
-    }
-    
-    return 0.0;
-  }
-
-  // Diversifier les résultats
-  List<Book> _diversifyResults(List<ScoredBook> scored, int limit) {
-    if (scored.length <= limit) {
-      return scored.map((s) => s.book).toList();
-    }
-    
-    final result = <Book>[];
-    final seenGenres = <String>{};
-    final seenAuthors = <String>{};
-    
-    // Première passe: meilleurs scores avec diversité
-    for (var scoredBook in scored) {
-      if (result.length >= limit) break;
-      
-      final book = scoredBook.book;
-      
-      // Favoriser la diversité des genres
-      if (!seenGenres.contains(book.genre) || result.length < limit ~/ 2) {
-        result.add(book);
-        seenGenres.add(book.genre);
-        seenAuthors.add(book.auteur);
-      }
-    }
-    
-    // Deuxième passe: compléter si nécessaire
-    for (var scoredBook in scored) {
-      if (result.length >= limit) break;
-      if (!result.contains(scoredBook.book)) {
-        result.add(scoredBook.book);
-      }
-    }
-    
-    return result.take(limit).toList();
+  Future<void> resetDatabase() async {
+    final db = await instance.database;
+    await db.delete(tableInteractions);
+    await db.delete(tableMetrics);
   }
 }
