@@ -20,6 +20,10 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    // Charger le catalogue au cas où il n'a pas été chargé par le Provider.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<BookProvider>(context, listen: false).loadBooks();
+    });
   }
 
   @override
@@ -27,11 +31,23 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     _tabController.dispose();
     super.dispose();
   }
+  
+  // Fonction pour obtenir les genres depuis le provider (méthode déjà définie dans votre BookProvider)
+  List<String> _getAllGenres(BookProvider provider) {
+      return provider.allBooks.map((book) => book.genre).toSet().toList()..sort();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final bookProvider = Provider.of<BookProvider>(context);
-    final genres = bookProvider.getAllGenres();
+    // Utilisation de context.watch pour écouter les changements dans BookProvider
+    final bookProvider = context.watch<BookProvider>(); 
+    final genres = _getAllGenres(bookProvider);
+
+    // Fonction de filtrage simple
+    List<Book> _filterBooks(List<Book> books) {
+      if (_selectedGenre == null) return books;
+      return books.where((book) => book.genre == _selectedGenre).toList();
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -105,23 +121,20 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                       context,
                       _filterBooks(bookProvider.recommendedBooks),
                       emptyMessage: 'Aucune recommandation disponible.\nCommencez par aimer des livres !',
+                      bookProvider: bookProvider, // Passer le provider
                     ),
                     _buildBookGrid(
                       context,
                       _filterBooks(bookProvider.allBooks),
                       emptyMessage: 'Aucun livre disponible.',
+                      bookProvider: bookProvider, // Passer le provider
                     ),
                   ],
                 ),
     );
   }
 
-  List<Book> _filterBooks(List<Book> books) {
-    if (_selectedGenre == null) return books;
-    return books.where((book) => book.genre == _selectedGenre).toList();
-  }
-
-  Widget _buildBookGrid(BuildContext context, List<Book> books, {required String emptyMessage}) {
+  Widget _buildBookGrid(BuildContext context, List<Book> books, {required String emptyMessage, required BookProvider bookProvider}) {
     if (books.isEmpty) {
       return Center(
         child: Column(
@@ -148,7 +161,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
 
     return RefreshIndicator(
       onRefresh: () async {
-        await Provider.of<BookProvider>(context, listen: false).loadBooks();
+        await bookProvider.loadBooks();
       },
       child: GridView.builder(
         padding: const EdgeInsets.all(16),
@@ -163,14 +176,17 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
           final book = books[index];
           return BookCard(
             book: book,
-            onTap: () => _navigateToDetail(context, book),
+            onTap: () => _navigateToDetail(context, book, bookProvider),
           );
         },
       ),
     );
   }
 
-  void _navigateToDetail(BuildContext context, Book book) {
+  void _navigateToDetail(BuildContext context, Book book, BookProvider bookProvider) {
+    // Enregistre la vue avant de naviguer
+    bookProvider.viewBook(book);
+    
     Navigator.push(
       context,
       MaterialPageRoute(
