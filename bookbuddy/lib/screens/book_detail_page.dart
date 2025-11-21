@@ -27,6 +27,15 @@ class _BookDetailPageState extends State<BookDetailPage> {
   }
 
   Future<void> _loadFavoriteStatus() async {
+    if (widget.book.id == null) {
+      if (!mounted) return;
+      setState(() {
+        _isFavorite = false;
+        _isLoading = false;
+      });
+      return;
+    }
+    
     final isFav = await _bookProvider.isFavorite(widget.book.id!);
     
     if (!mounted) return;
@@ -42,6 +51,8 @@ class _BookDetailPageState extends State<BookDetailPage> {
   }
 
   Future<void> _toggleFavorite() async {
+    if (widget.book.id == null) return;
+    
     await _bookProvider.toggleFavorite(widget.book);
     
     if (!mounted) return;

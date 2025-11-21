@@ -129,7 +129,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 secondary: const Icon(Icons.auto_awesome),
                 title: const Text('Algorithme intelligent'),
                 subtitle: const Text('Utilise l\'algorithme adaptatif avancé'),
-                value: true, 
+                value: bookProvider.useSmartAlgorithm, 
                 onChanged: (value) async {
                   await _handleAlgorithmChange(bookProvider, value);
                 },
@@ -238,36 +238,54 @@ class _SettingsPageState extends State<SettingsPage> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // ignore: deprecated_member_use
-              RadioListTile<ThemeMode>(
+              ListTile(
                 title: const Text('Clair'),
-                value: ThemeMode.light,
-                groupValue: selectedTheme,
-                onChanged: (ThemeMode? value) {
+                leading: Radio<ThemeMode>(
+                  value: ThemeMode.light,
+                  groupValue: selectedTheme,
+                  onChanged: (ThemeMode? value) {
+                    setState(() {
+                      selectedTheme = value;
+                    });
+                  },
+                ),
+                onTap: () {
                   setState(() {
-                    selectedTheme = value;
+                    selectedTheme = ThemeMode.light;
                   });
                 },
               ),
-              // ignore: deprecated_member_use
-              RadioListTile<ThemeMode>(
+              ListTile(
                 title: const Text('Sombre'),
-                value: ThemeMode.dark,
-                groupValue: selectedTheme,
-                onChanged: (ThemeMode? value) {
+                leading: Radio<ThemeMode>(
+                  value: ThemeMode.dark,
+                  groupValue: selectedTheme,
+                  onChanged: (ThemeMode? value) {
+                    setState(() {
+                      selectedTheme = value;
+                    });
+                  },
+                ),
+                onTap: () {
                   setState(() {
-                    selectedTheme = value;
+                    selectedTheme = ThemeMode.dark;
                   });
                 },
               ),
-              // ignore: deprecated_member_use
-              RadioListTile<ThemeMode>(
+              ListTile(
                 title: const Text('Système'),
-                value: ThemeMode.system,
-                groupValue: selectedTheme,
-                onChanged: (ThemeMode? value) {
+                leading: Radio<ThemeMode>(
+                  value: ThemeMode.system,
+                  groupValue: selectedTheme,
+                  onChanged: (ThemeMode? value) {
+                    setState(() {
+                      selectedTheme = value;
+                    });
+                  },
+                ),
+                onTap: () {
                   setState(() {
-                    selectedTheme = value;
+                    selectedTheme = ThemeMode.system;
                   });
                 },
               ),

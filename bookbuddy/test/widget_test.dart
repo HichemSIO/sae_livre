@@ -12,7 +12,7 @@ import 'package:bookbuddy/main.dart';
 void main() {
   testWidgets('BookBuddy app smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const BookBuddyApp());
+    await tester.pumpWidget(const MyApp());
 
     // Verify that the app starts without crashing
     expect(find.byType(Scaffold), findsWidgets);

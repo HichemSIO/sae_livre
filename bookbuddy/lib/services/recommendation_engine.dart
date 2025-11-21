@@ -203,6 +203,7 @@ class RecommendationEngine {
   double _calculateGenreAffinity(Book book, UserPreferences prefs) {
     if (prefs.genreCount.isEmpty) return book.noteMoyenne / 5.0;
     final genreScore = prefs.genreCount[book.genre] ?? 0;
+    if (prefs.genreCount.values.isEmpty) return 0.0;
     final maxGenreScore = prefs.genreCount.values.reduce((a, b) => a > b ? a : b);
     return maxGenreScore > 0 ? genreScore / maxGenreScore : 0.0;
   }
@@ -210,6 +211,7 @@ class RecommendationEngine {
   double _calculateAuthorAffinity(Book book, UserPreferences prefs) {
     if (prefs.authorCount.isEmpty) return 0.0;
     final authorScore = prefs.authorCount[book.auteur] ?? 0;
+    if (prefs.authorCount.values.isEmpty) return 0.0;
     final maxAuthorScore = prefs.authorCount.values.reduce((a, b) => a > b ? a : b);
     return maxAuthorScore > 0 ? authorScore / maxAuthorScore : 0.0;
   }

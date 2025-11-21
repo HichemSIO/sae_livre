@@ -1,133 +1,51 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'providers/book_provider.dart';
-import 'providers/theme_provider.dart';
-import 'screens/home_page.dart';
-import 'screens/favorites_page.dart';
-import 'screens/stats_page.dart';
-import 'screens/settings_page.dart';
-import 'services/database_helper.dart'; // Importation relative (CORRIGÉE)
+import 'services/database_helper.dart'; // Le chemin correct ! // Importe votre classe de base de données
 
+// Fonction principale asynchrone pour initialiser la base de données
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  // Obligatoire pour utiliser les plugins (comme sqflite) avant runApp
+  WidgetsFlutterBinding.ensureInitialized(); 
   
-  // Initialiser la base de données (cette ligne est maintenant correcte)
-  // ATTENTION: La méthode .database est une convention pour SQFlite.
-  // Elle devrait fonctionner avec la nouvelle implémentation de DatabaseHelper.
+  // Initialise la base de données (crée la base et les tables si elles n'existent pas)
+  // Cette ligne est le point de connexion de sqflite.
   await DatabaseHelper.instance.database; 
   
-  runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => ThemeProvider()),
-        ChangeNotifierProvider(create: (_) => BookProvider()),
-      ],
-      child: const BookBuddyApp(),
-    ),
-  );
+  runApp(const MyApp());
 }
 
-class BookBuddyApp extends StatelessWidget {
-  const BookBuddyApp({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ThemeProvider>(
-      builder: (context, themeProvider, child) {
-        return MaterialApp(
-          title: 'BookBuddy',
-          debugShowCheckedModeBanner: false,
-          theme: ThemeData(
-            useMaterial3: true,
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: const Color(0xFF1A237E),
-              brightness: Brightness.light,
-            ),
-            textTheme: GoogleFonts.openSansTextTheme(),
-            appBarTheme: AppBarTheme(
-              titleTextStyle: GoogleFonts.merriweather(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-          ),
-          darkTheme: ThemeData(
-            useMaterial3: true,
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: const Color(0xFF1A237E),
-              brightness: Brightness.dark,
-            ),
-            textTheme: GoogleFonts.openSansTextTheme(ThemeData.dark().textTheme),
-          ),
-          themeMode: themeProvider.themeMode,
-          home: const MainScaffold(),
-        );
-      },
+    return MaterialApp(
+      title: 'BookBuddy',
+      theme: ThemeData(
+        primarySwatch: Colors.teal,
+        // Utilisez le thème sombre pour correspondre à l'image précédente
+        brightness: Brightness.dark, 
+        useMaterial3: true,
+      ),
+      home: const MyHomePage(), // Votre page d'accueil
     );
   }
 }
 
-class MainScaffold extends StatefulWidget {
-  const MainScaffold({super.key});
-
-  @override
-  State<MainScaffold> createState() => _MainScaffoldState();
-}
-
-class _MainScaffoldState extends State<MainScaffold> {
-  int _selectedIndex = 0;
-  
-  final List<Widget> _pages = [
-    const HomePage(),
-    const FavoritesPage(),
-    const StatsPage(),
-    const SettingsPage(),
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    // Charger les données au démarrage
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<BookProvider>(context, listen: false).loadBooks();
-    });
-  }
+// Remplacez cette classe par votre vraie page d'accueil si elle est plus complexe
+class MyHomePage extends StatelessWidget {
+  const MyHomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _pages[_selectedIndex],
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedIndex,
-        onDestinationSelected: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Accueil',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.favorite_outline),
-            selectedIcon: Icon(Icons.favorite),
-            label: 'Favoris',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.bar_chart_outlined),
-            selectedIcon: Icon(Icons.bar_chart),
-            label: 'Stats',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings),
-            label: 'Paramètres',
-          ),
-        ],
+      appBar: AppBar(
+        title: const Text('BookBuddy'),
+      ),
+      body: const Center(
+        child: Text(
+          'Application BookBuddy prête à l\'emploi !',
+          style: TextStyle(fontSize: 20),
+        ),
       ),
     );
   }

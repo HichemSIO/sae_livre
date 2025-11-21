@@ -8,8 +8,12 @@ plugins {
 android {
     namespace = "com.example.flutter_application_1"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
-
+    
+    // FIX TEMPORAIRE DU NDK: Nous forçons la détection de la version installée
+    // Au lieu de ndkVersion = flutter.ndkVersion, nous laissons Gradle la trouver.
+    // NOTE: Si le problème persiste, on peut fixer la version manuellement ici (ex: ndkVersion = "25.2.8702022")
+    // Pour l'instant, on retire la ligne problematic: flutter.ndkVersion
+    
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17

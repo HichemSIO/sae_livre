@@ -3,8 +3,12 @@ import 'dart:convert';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:flutter/services.dart';
-import '../models/book.dart';
-import '../models/user_interaction.dart'; // Importe UserInteraction et PerformanceMetric
+import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
+import 'package:path_provider/path_provider.dart';
+import 'dart:io' as io show Platform;
+// NOTE: Ces modèles doivent exister dans votre dossier '../models/'
+import '../models/book.dart'; 
+import '../models/user_interaction.dart'; 
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
@@ -17,16 +21,59 @@ class DatabaseHelper {
   static const String tableMetrics = 'metrics';
 
   Future<Database> get database async {
+    if (kIsWeb) {
+      throw UnsupportedError('sqflite n\'est pas supporté sur le web. Cette application nécessite une plateforme native (Windows, Linux, macOS, Android, iOS).');
+    }
     if (_database != null) return _database!;
     _database = await _initDB('bookbuddy.db');
     return _database!;
   }
 
   Future<Database> _initDB(String filePath) async {
-    final dbPath = await getDatabasesPath();
-    final path = join(dbPath, filePath);
+    String dbPath;
+    
+    try {
+      if (kIsWeb) {
+        throw UnsupportedError('sqflite n\'est pas supporté sur le web. Utilisez une autre solution comme IndexedDB.');
+      }
+      
+      final isDesktop = io.Platform.isWindows || io.Platform.isLinux || io.Platform.isMacOS;
+      
+      if (isDesktop) {
+        final directory = await getApplicationDocumentsDirectory();
+        dbPath = directory.path;
+      } else {
+        dbPath = await getDatabasesPath();
+      }
+      
+      final path = join(dbPath, filePath);
+      debugPrint('Chemin de la base de données: $path');
+      
+      return await openDatabase(
+        path,
+        version: 2,
+        onCreate: _createDB,
+        onUpgrade: _onUpgrade,
+      );
+    } catch (e, stackTrace) {
+      debugPrint('Erreur lors de l\'initialisation de la base de données: $e');
+      debugPrint('Stack trace: $stackTrace');
+      rethrow;
+    }
+  }
 
-    return await openDatabase(path, version: 1, onCreate: _createDB);
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      try {
+        await db.execute('ALTER TABLE $tableBooks ADD COLUMN date_ajout TEXT');
+        await db.execute(
+          'UPDATE $tableBooks SET date_ajout = ? WHERE date_ajout IS NULL',
+          [DateTime.now().toIso8601String()],
+        );
+      } catch (e) {
+        debugPrint('Erreur lors de la mise à jour de la base de données: $e');
+      }
+    }
   }
 
   Future _createDB(Database db, int version) async {
@@ -45,7 +92,8 @@ CREATE TABLE $tableBooks (
   genre $textType,
   note_moyenne $realType,
   description $textType,
-  image_url $textType
+  image_url $textType,
+  date_ajout $textType
 )
 ''');
 
@@ -72,24 +120,28 @@ CREATE TABLE $tableMetrics (
 )
 ''');
     
-    await _loadInitialBooks(db);
+    await _loadInitialBooks(db); 
   }
 
   /// Charge le catalogue de livres depuis le JSON et les insère
   Future<void> _loadInitialBooks(Database db) async {
-    final String jsonString = await rootBundle.loadString('assets/data/books.json');
-    final List<dynamic> jsonList = json.decode(jsonString);
+    try {
+      final String jsonString = await rootBundle.loadString('assets/data/books.json');
+      final List<dynamic> jsonList = json.decode(jsonString);
 
-    final batch = db.batch();
-    for (int i = 0; i < jsonList.length; i++) {
-        final book = Book.fromJson(jsonList[i]).copyWith(id: i + 1); 
-        batch.insert(tableBooks, book.toMap());
+      final batch = db.batch();
+      for (int i = 0; i < jsonList.length; i++) {
+          final book = Book.fromJson(jsonList[i]).copyWith(id: i + 1); 
+          batch.insert(tableBooks, book.toMap());
+      }
+      await batch.commit(noResult: true);
+    } catch (e) {
+      debugPrint('Erreur lors du chargement des livres depuis JSON: $e');
     }
-    await batch.commit(noResult: true);
   }
 
 
-  // --- CRUD BASIQUE ---
+  // --- CRUD BASIQUE ET LOGIQUE MÉTIER ---
 
   Future<List<Book>> getAllBooks() async {
     final db = await instance.database;
@@ -103,6 +155,46 @@ CREATE TABLE $tableMetrics (
     return result.isNotEmpty ? Book.fromMap(result.first) : null;
   }
 
+  /// Ajouter un nouveau livre dans la base de données
+  Future<int> insertBook(Book book) async {
+    final db = await instance.database;
+    return await db.insert(tableBooks, book.toMap());
+  }
+
+  /// Ajouter plusieurs livres en une seule transaction
+  Future<void> insertBooks(List<Book> books) async {
+    final db = await instance.database;
+    final batch = db.batch();
+    for (var book in books) {
+      batch.insert(tableBooks, book.toMap());
+    }
+    await batch.commit(noResult: true);
+  }
+
+  /// Mettre à jour un livre existant
+  Future<int> updateBook(Book book) async {
+    if (book.id == null) {
+      throw ArgumentError('Le livre doit avoir un ID pour être mis à jour');
+    }
+    final db = await instance.database;
+    return await db.update(
+      tableBooks,
+      book.toMap(),
+      where: 'id = ?',
+      whereArgs: [book.id],
+    );
+  }
+
+  /// Supprimer un livre
+  Future<int> deleteBook(int id) async {
+    final db = await instance.database;
+    return await db.delete(
+      tableBooks,
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
   Future<List<UserInteraction>> getAllInteractions() async {
     final db = await instance.database;
     final result = await db.query(tableInteractions);
@@ -114,18 +206,18 @@ CREATE TABLE $tableMetrics (
     await db.insert(tableInteractions, interaction.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
   }
   
+  // NOTE: PerformanceMetric doit être un modèle importé et mappable
   Future<void> insertMetric(PerformanceMetric metric) async {
     final db = await instance.database;
     await db.insert(tableMetrics, metric.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
   }
   
+  // NOTE: PerformanceMetric doit être un modèle importé et mappable
   Future<List<PerformanceMetric>> getMetrics() async {
       final db = await instance.database;
       final result = await db.query(tableMetrics);
       return result.map((json) => PerformanceMetric.fromMap(json)).toList(); 
   }
-
-  // --- LOGIQUE MÉTIER SPÉCIFIQUE ---
 
   Future<List<Book>> getFavoriteBooks() async {
     final db = await instance.database;
@@ -157,8 +249,8 @@ CREATE TABLE $tableMetrics (
       'SELECT COUNT(*) FROM $tableInteractions WHERE book_id = ? AND action_type = ?',
       [bookId, 'favorite']
     );
-    // Vérifie si le count est supérieur à 0
-    return Sqflite.firstIntValue(count) != null && Sqflite.firstIntValue(count)! > 0;
+    final firstValue = Sqflite.firstIntValue(count);
+    return firstValue != null && firstValue > 0;
   }
 
   Future<void> removeFavorite(int bookId) async {

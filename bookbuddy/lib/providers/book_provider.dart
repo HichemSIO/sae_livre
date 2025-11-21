@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' show ChangeNotifier, kIsWeb, debugPrint;
 import '../models/book.dart';
 import '../models/user_interaction.dart';
 import '../services/database_helper.dart';
@@ -14,12 +14,14 @@ class BookProvider extends ChangeNotifier {
   List<Book> _favoriteBooks = [];
   bool _isLoading = false;
   String? _error;
+  bool _useSmartAlgorithm = true;
 
   List<Book> get allBooks => _allBooks;
   List<Book> get recommendedBooks => _recommendedBooks;
   List<Book> get favoriteBooks => _favoriteBooks;
   bool get isLoading => _isLoading;
   String? get error => _error;
+  bool get useSmartAlgorithm => _useSmartAlgorithm;
 
   // Charger tous les livres
   Future<void> loadBooks() async {
@@ -28,6 +30,15 @@ class BookProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
+      // Vérifier si on est sur le web
+      if (kIsWeb) {
+        _error = 'Cette application nécessite une plateforme native (Windows, Linux, macOS, Android, iOS). Le mode web n\'est pas encore supporté.';
+        _allBooks = [];
+        _recommendedBooks = [];
+        _favoriteBooks = [];
+        return;
+      }
+      
       final startTime = DateTime.now();
       _allBooks = await _db.getAllBooks();
       
@@ -49,9 +60,13 @@ class BookProvider extends ChangeNotifier {
   }
 
   // Charger les recommandations
-  Future<void> loadRecommendations({bool useSmartAlgorithm = true}) async {
+  Future<void> loadRecommendations({bool? useSmartAlgorithm}) async {
+    if (useSmartAlgorithm != null) {
+      _useSmartAlgorithm = useSmartAlgorithm;
+    }
+    
     try {
-      if (useSmartAlgorithm) {
+      if (_useSmartAlgorithm) {
         // La méthode getSmartRecommendations() renvoie List<Book> ou List<ScoredBook>
         // Le moteur retourne des Books, donc c'est correct.
         _recommendedBooks = await _recommendationEngine.getSmartRecommendations(limit: 20);

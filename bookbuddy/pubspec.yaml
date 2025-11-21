@@ -15,6 +15,7 @@ dependencies:
   
   # Base de données (SQLite)
   sqflite: ^2.3.0
+  sqflite_common_ffi: ^2.3.0
   path_provider: ^2.1.1
   path: ^1.8.3
   

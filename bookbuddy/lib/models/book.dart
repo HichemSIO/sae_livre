@@ -43,7 +43,9 @@ class Book {
       noteMoyenne: (map['note_moyenne'] as num).toDouble(),
       description: map['description'] as String,
       imageUrl: map['image_url'] as String,
-      dateAjout: DateTime.parse(map['date_ajout'] as String),
+      dateAjout: map['date_ajout'] != null 
+          ? DateTime.parse(map['date_ajout'] as String)
+          : DateTime.now(),
     );
   }
 

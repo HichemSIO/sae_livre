@@ -201,6 +201,26 @@ class _StatsPageState extends State<StatsPage> {
       ..sort((a, b) => b.value.compareTo(a.value));
     final topGenres = sortedGenres.take(5).toList();
 
+    if (topGenres.isEmpty) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              Text(
+                'Genres préférés',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              const SizedBox(height: 16),
+              const Text('Aucune donnée disponible'),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
